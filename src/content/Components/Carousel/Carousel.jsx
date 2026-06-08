@@ -96,6 +96,7 @@ export default function Carousel({
   const [isAnimating, setIsAnimating] = useState(false);
 
   const containerRef = useRef(null);
+  const indicatorRefs = useRef([]);
   useEffect(() => {
     if (pauseOnHover && containerRef.current) {
       const container = containerRef.current;
@@ -245,14 +246,40 @@ export default function Carousel({
       <div className={`carousel-indicators-container ${round ? 'round' : ''}`}>
         <div className="carousel-indicators">
           {items.map((_, index) => (
-            <motion.div
+            <motion.button
+              ref={el => (indicatorRefs.current[index] = el)}
               key={index}
+              type="button"
               className={`carousel-indicator ${activeIndex === index ? 'active' : 'inactive'}`}
               animate={{
                 scale: activeIndex === index ? 1.2 : 1
               }}
               onClick={() => setPosition(loop ? index + 1 : index)}
               transition={{ duration: 0.15 }}
+              aria-label={`Go to slide ${index + 1}`}
+              tabIndex={activeIndex === index ? 0 : -1}
+              aria-current={activeIndex === index}
+              onKeyDown={e => {
+                let nextIndex = index;
+
+                if (e.key === 'ArrowRight') {
+                  e.preventDefault();
+                  nextIndex = (index + 1) % items.length;
+                }
+
+                if (e.key === 'ArrowLeft') {
+                  e.preventDefault();
+                  nextIndex = (index - 1 + items.length) % items.length;
+                }
+
+                if (nextIndex !== index) {
+                  setPosition(loop ? nextIndex + 1 : nextIndex);
+
+                  requestAnimationFrame(() => {
+                    indicatorRefs.current[nextIndex]?.focus();
+                  });
+                }
+              }}
             />
           ))}
         </div>
